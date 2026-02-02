@@ -1,0 +1,3 @@
+export const DEBOUNCE_DELAY_MS = 700
+export const AUTO_ADD_TO_HISTORY_DELAY_MS = 5000
+export const SCROLL_THRESHOLD_PX = 50

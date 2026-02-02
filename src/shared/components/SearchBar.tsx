@@ -1,15 +1,31 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { DEBOUNCE_DELAY_MS } from '../../constants/behavior.constants'
 
 interface SearchBarProps {
     onQuerySubmitted: (query: string) => void
+    onManualSubmit?: (query: string) => void
     placeholder?: string
 }
 
-export const SearchBar = ({ onQuerySubmitted, placeholder = "Buscar" }: SearchBarProps) => {
+export const SearchBar = ({ onQuerySubmitted, onManualSubmit, placeholder = "Buscar" }: SearchBarProps) => {
     const [query, setQuery] = useState('')
 
+    useEffect(() => {
+        if (!query.trim()) return
+
+        const timeoutId = setTimeout(() => {
+            onQuerySubmitted(query)
+        }, DEBOUNCE_DELAY_MS)
+
+        return () => clearTimeout(timeoutId)
+    }, [query, onQuerySubmitted])
+
     const handleQuerySubmitted = () => {
-        onQuerySubmitted(query)
+        if (onManualSubmit) {
+            onManualSubmit(query)
+        } else {
+            onQuerySubmitted(query)
+        }
         setQuery('')
     }
 
