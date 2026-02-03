@@ -14,6 +14,7 @@ export const useGifs = () => {
     const [gifs, setGifs] = useState<Gif[]>([])
     const queryAddedReference = useRef<string>('')
     const latestRequestId = useRef<number>(0)
+    const gifsCache = useRef<Record<string, Gif[]>>({})
 
     const handleQueryAdded = useCallback((query: string) => {
         if (!query.trim()) return
@@ -56,10 +57,16 @@ export const useGifs = () => {
     useEffect(() => {
         if (!currentQuery) return
 
+        if (gifsCache.current[currentQuery]) {
+            setGifs(gifsCache.current[currentQuery])
+            return
+        }
+
         const requestId = ++latestRequestId.current
 
         getGifsByQuery(currentQuery).then((response) => {
             if (requestId !== latestRequestId.current) return
+            gifsCache.current[currentQuery] = response
             setGifs(response)
         })
     }, [currentQuery])
