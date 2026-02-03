@@ -1,12 +1,13 @@
-import { mockGifs } from "./mock-data/gifs.mock"
 import { CustomHeader } from "./shared/components/CustomHeader"
 import { SearchBar } from "./shared/components/SearchBar"
-import { PreviousSearches } from "./gifs/PreviousSearches"
-import { GifsList } from "./gifs/GifsList"
+import { PreviousSearches } from "./gifs/components/PreviousSearches"
+import { GifsList } from "./gifs/components/GifsList"
 import { useState, useEffect, useRef, useCallback } from "react"
 import { STORAGE_KEY, MAX_SEARCHES_ITEMS } from "./constants/storage.constants"
 import { APP_TITLE, APP_DESCRIPTION, SEARCH_PLACEHOLDER } from "./constants/app.constants"
 import { AUTO_ADD_TO_HISTORY_DELAY_MS, SCROLL_THRESHOLD_PX } from "./constants/behavior.constants"
+import { getGifsByQuery } from "./gifs/actions/get-gifs-by-query.action"
+import type { Gif } from "./gifs/interfaces/gif.interface"
 
 export const GifsApp = () => {
 
@@ -16,7 +17,10 @@ export const GifsApp = () => {
     })
 
     const [currentQuery, setCurrentQuery] = useState<string>('')
+    const [searchQuery, setSearchQuery] = useState<string>('')
+    const [gifs, setGifs] = useState<Gif[]>([])
     const queryAddedReference = useRef<string>('')
+    const latestRequestId = useRef<number>(0)
 
     const handleQueryAdded = useCallback((query: string) => {
         if (!query.trim()) return
@@ -31,10 +35,10 @@ export const GifsApp = () => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(newQueries))
     }, [previousQueries])
 
-    const handleQuerySubmitted = (query: string) => {
+    const handleQuerySubmitted = useCallback((query: string) => {
         setCurrentQuery(query)
         queryAddedReference.current = ''
-    }
+    }, [])
 
     const handleManualSubmit = (query: string) => {
         setCurrentQuery(query)
@@ -62,9 +66,21 @@ export const GifsApp = () => {
         }
     }, [currentQuery, handleQueryAdded])
 
-    const handleQueryClicked = (query: string) => {
-        console.log(query)
-    }
+    const handleQueryClicked = useCallback((query: string) => {
+        setCurrentQuery(query)
+        setSearchQuery('')
+    }, [])
+
+    useEffect(() => {
+        if (!currentQuery) return
+
+        const requestId = ++latestRequestId.current
+
+        getGifsByQuery(currentQuery).then((response) => {
+            if (requestId !== latestRequestId.current) return
+            setGifs(response)
+        })
+    }, [currentQuery])
 
 
     return (
@@ -78,6 +94,8 @@ export const GifsApp = () => {
                 placeholder={SEARCH_PLACEHOLDER}
                 onQuerySubmitted={handleQuerySubmitted}
                 onManualSubmit={handleManualSubmit}
+                value={searchQuery}
+                onChange={setSearchQuery}
             />
             
             <PreviousSearches
@@ -85,7 +103,7 @@ export const GifsApp = () => {
                 onQueryClicked={handleQueryClicked}
             />
             
-            <GifsList gifs={mockGifs} />
+            <GifsList gifs={gifs} />
         </>
     )
 }

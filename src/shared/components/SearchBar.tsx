@@ -5,10 +5,15 @@ interface SearchBarProps {
     onQuerySubmitted: (query: string) => void
     onManualSubmit?: (query: string) => void
     placeholder?: string
+    value?: string
+    onChange?: (value: string) => void
 }
 
-export const SearchBar = ({ onQuerySubmitted, onManualSubmit, placeholder = "Buscar" }: SearchBarProps) => {
-    const [query, setQuery] = useState('')
+export const SearchBar = ({ onQuerySubmitted, onManualSubmit, placeholder = "Buscar", value, onChange }: SearchBarProps) => {
+    const [internalQuery, setInternalQuery] = useState('')
+    
+    const query = value !== undefined ? value : internalQuery
+    const setQuery = onChange !== undefined ? onChange : setInternalQuery
 
     useEffect(() => {
         if (!query.trim()) return
